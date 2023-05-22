@@ -12,18 +12,17 @@
 * [⚙️ 链接装载库](#link-loading-library)
 * [📚 书籍](#books)
 * [🔱 C/C++ 项目](#cc-project)
-* [💯 复习刷题网站](#review-of-brush-questions-website)
 * [📝 面试题目经验](#interview-questions-experience)
 * [📆 招聘时间岗位](#recruitment-time-post)
 * [👍 内推](#recommend)
 
 <a id="cc"></a>
 
-## ➕ C/C++
+# ➕ C/C++
 
-### `const`
+## `const`
 
-#### 作用
+### 作用
 
 1. 修饰变量，说明该变量`不可改变`；
 2. 修饰指针，分为指向常量的指针（pointer to const）和自身是常量的指针（常量指针，const pointer）；
@@ -96,13 +95,33 @@ int* const function7();     // 返回一个指向变量的常指针，使用：i
 存储在代码段|存储在数据段
 可通过 `#undef` 取消|不可取消
 
-### 引用
+## `mutable`
 
-#### 左值引用
+>用于修饰类中的成员变量，表示这个成员变量可以被修改，即使是在一个`const`成员函数中。
+
+但是，**mutable关键字不能用于修饰static类型变量**，因为静态变量的值是存储在类的静态存储区中的，不是存储在对象中的。静态变量与类的任何对象都没有直接关系，所以它没有”被const限制的修改”这个问题。
+
+```c++
+//多用于多线程编程中，在被const修饰的成员函数中，也可以对锁进行修改
+class LockableClass {
+public:
+    void doSomething() const {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        // do something while holding the lock
+        // ...
+    }
+private:
+    mutable std::mutex m_mutex;
+};
+```
+
+## 引用
+
+### 左值引用
 
 常规引用，一般表示对象的身份。
 
-#### 右值引用
+### 右值引用
 
 右值引用就是必须绑定到右值（一个临时对象、将要销毁的对象）的引用。
 
@@ -238,7 +257,7 @@ int main() {
 * `X& &`、`X& &&`、`X&& &` 可折叠成 `X&`
 * `X&& &&` 可折叠成 `X&&`
 
-### 函数指针
+## 函数指针
 
 * 概念：每个函数都有一个入口地址，该入口地址就是函数指针的指向
 
@@ -258,7 +277,7 @@ int cmp_int(const void *_a, const void * _b) {
 }
 ```
 
-### `this` 指针
+## `this` 指针
 
 1. `this` 指针是一个隐含于每一个非静态成员函数中的特殊指针。它指向调用该成员函数的那个对象。
 2. 当对一个对象调用成员函数时，编译程序先将对象的地址赋给 `this` 指针，然后调用成员函数，每次成员函数存取数据成员时，都隐式使用 `this` 指针。
@@ -266,8 +285,6 @@ int cmp_int(const void *_a, const void * _b) {
 4. `this` 指针被隐含地声明为: `ClassName *const this`，这意味着不能给 `this` 指针赋值；在 `ClassName` 类的 `const` 成员函数中，`this` 指针的类型为：`const ClassName* const`，这说明不能对 `this` 指针所指向的这种对象是不可修改的（即不能对这种对象的数据成员进行赋值操作）；
 5. `this` 并不是一个常规变量，而是个右值，所不能取得 `this` 的地址（不能 `&this`）。
 6. `this`在程序运行时动态进行绑定
-
-使用实例
 
 ```c++
 //实现链式引用
@@ -293,39 +310,14 @@ int main() {
 }
 ```
 
-#### nullptr可以调用成员函数吗
-
-* 对象在创建时就已经绑定了其所属类的函数地址，即类的成员函数地址。这是通过类的静态信息（如 class 关键字定义的属性和方法）来实现的。当类的成员函数被定义时，编译器会根据函数定义的语法将其转化为相应的函数指针类型，并将该函数指针加入到类的信息中，同时，编译器也会为该类分配一块内存作为虚函数表（vtable），并将该表的指针存储到该类的各个对象中。在运行时，当对象调用其成员函数时，编译器会根据 vtable 中相应函数指针的地址，调用对应的函数实现。
-* 需要注意的是，对于虚函数来说，它的地址并不是在编译期确定的，而是在运行时动态绑定的。虚函数的动态绑定是由虚函数表（vtable）实现的。虚函数表在对象的内存布局中存在一个指向虚函数表的指针，这个指针通常被称为虚指针（vptr），它指向了该对象的虚函数表，从而实现在运行时动态绑定虚函数的功能。当对象调用虚函数时，会先根据虚指针找到其所属类的虚函数表，并根据虚函数在表中的位置找到实际需要调用的函数实现。
-* 因此，在编译阶段，对象已经绑定了其所属类的函数地址，但在运行时，虚函数的绑定是动态的，实现了多态的特性。
-* 因此，调用成员函数和指针空不空没有关系
-
-```c++
-class animal{
-public:
-    void sleep(){ cout << "animal sleep" << endl; }
-    void breathe(){ cout << "animal breathe haha" << endl; }
-};
-class fish :public animal{
-public:
-    void breathe(){ cout << "fish bubble" << endl; }
-};
-int main(){
-    animal *pAn=nullptr;
-    pAn->breathe();   // 输出：animal breathe haha
-    fish *pFish = nullptr;
-    pFish->breathe(); // 输出：fish bubble
-}
-```
-
-### `static`
+## `static`
 
 1. 修饰普通变量，修改变量的存储区域和生命周期，使变量存储在静态区，在 main 函数运行前就分配了空间，如果有初始值就用初始值初始化它，如果没有初始值系统用默认值初始化它。
 2. 修饰普通函数，表明函数的作用范围，仅在定义该函数的文件内才能使用。在多人开发项目时，为了防止与他人命名空间里的函数重名，可以将函数定位为 static。
 3. 修饰成员变量，修饰成员变量使所有的对象只保存一个该变量，而且不需要生成对象就可以访问该成员。
 4. 修饰成员函数，修饰成员函数使得不需要生成对象就可以访问该函数，但是在 static 函数内不能访问非静态成员。
 
-#### 在成员函数内部声明静态变量
+### 在成员函数内部声明静态变量
 
 在成员函数内部声明的静态变量是该函数的局部静态变量。这种局部静态变量只会在第一次调用该函数时初始化，并且在整个程序生命周期中仅存在一个实例。
 
@@ -356,17 +348,13 @@ void myFunction() {
 }
 ```
 
-### `inline`
-
-#### inline特征
+## `inline`
 
 * 相当于把内联函数里面的内容写在调用内联函数处；
 * 相当于不用执行进入函数的步骤，直接执行函数体；
 * 相当于宏，却比宏多了类型检查，真正具有函数特性；
 * 编译器一般不内联包含循环、递归、switch 等复杂操作的内联函数；
 * 在类声明中定义的函数，除了虚函数的其他函数都会自动隐式地当成内联函数。
-
-#### inline使用
 
 ```cpp
 // 声明1（加 inline，建议使用）
@@ -390,14 +378,14 @@ class A {
 inline int A::doA() { return 0; }   // 需要显式内联
 ```
 
-#### 编译器对 inline 函数的处理步骤
+### 编译器对內联函数的处理步骤
 
 1. 将 inline 函数体复制到 inline 函数调用点处；
 2. 为所用 inline 函数中的局部变量分配内存空间；
 3. 将 inline 函数的的输入参数和返回值映射到调用方法的局部变量空间中；
 4. 如果 inline 函数有多个返回点，将其转变为 inline 函数代码块末尾的分支（使用 GOTO）。
 
-#### inline优缺点
+### 內联函数优缺点
 
 优点
 
@@ -412,61 +400,13 @@ inline int A::doA() { return 0; }   // 需要显式内联
 2. inline 函数无法随着函数库升级而升级。inline函数的改变需要重新编译，不像 non-inline 可以直接链接。
 3. 是否内联，程序员不可控。内联函数只是对编译器的建议，是否对函数内联，决定权在于编译器。
 
-#### 虚函数（virtual）可以是内联函数（inline）吗？
+### 虚函数（virtual）可以是内联函数（inline）吗？
 
 * 虚函数可以是内联函数，内联是可以修饰虚函数的，但是当虚函数表现多态性的时候不能内联。
 * 内联是在编译期建议编译器内联，而虚函数的多态性在运行期，编译器无法知道运行期调用哪个代码，因此虚函数表现为多态性时（运行期）不可以内联。
 * `inline virtual` 唯一可以内联的时候是：编译器知道所调用的对象是哪个类（如 `Base::who()`），这只有在编译器具有实际对象而不是对象的指针或引用时才会发生。
 
-虚函数内联使用
-
-```cpp
-#include <iostream>  
-using namespace std;
-class Base
-{
-public:
-    inline virtual void who()
-    {
-        cout << "I am Base\n";
-    }
-    virtual ~Base() {}
-};
-class Derived : public Base
-{
-public:
-    inline void who()  // 不写inline时隐式内联
-    {
-        cout << "I am Derived\n";
-    }
-};
-
-int main()
-{
-    // 此处的虚函数 who()，是通过类（Base）的具体对象（b）来调用的，编译期间就能确定了，所以它可以是内联的，但最终是否内联取决于编译器。 
-    Base b;
-    b.who();
-
-    // 此处的虚函数是通过指针调用的，呈现多态性，需要在运行时期间才能确定，所以不能为内联。  
-    Base *ptr = new Derived();
-    ptr->who();
-
-    // 因为Base有虚析构函数（virtual ~Base() {}），所以 delete 时，会先调用派生类（Derived）析构函数，再调用基类（Base）析构函数，防止内存泄漏。
-    delete ptr;
-    ptr = nullptr;
-
-    system("pause");
-    return 0;
-} 
-```
-
-### `mutable`
-
->用于修饰类中的成员变量，表示这个成员变量可以被修改，即使是在一个`const`成员函数中。
-
-但是，**mutable关键字不能用于修饰static类型变量**，因为静态变量的值是存储在类的静态存储区中的，不是存储在对象中的。静态变量与类的任何对象都没有直接关系，所以它没有”被const限制的修改”这个问题。
-
-### `volatile`
+## `volatile`
 
 ```cpp
 volatile int i = 10; 
@@ -489,7 +429,7 @@ volatile int i = 10;
 * const 可以是 volatile （如只读的状态寄存器）
 * 指针可以是 volatile
 
-### `assert`
+## `assert`
 
 是宏，而非函数。可以通过定义 `NDEBUG` 来关闭 assert，但是需要在`include <assert.h>` 之前。
 
@@ -521,7 +461,7 @@ assert 使用
 assert( p != NULL );    // assert 不可用
 ```
 
-### `constexpr`
+## `constexpr`
 
 * 对于一个变量或者是对象，我们可以将其定义为 constexpr 类型，这样就能够在编译期确定该变量或者是对象的值，这样可以提高代码的效率。
 
@@ -545,11 +485,9 @@ int main() {
 
 ```
 
-### `pragma pack(n)`
+## `pragma pack(n)`
 
 设定结构体、联合以及类成员变量以 n 字节方式对齐
-
- #pragma pack(n) 使用
 
 ```cpp
 #pragma pack(push)  // 保存对齐状态
@@ -565,7 +503,7 @@ struct test
 #pragma pack(pop)  `// 恢复对齐状态
 ```
 
-### 位域
+## 位域
 
 ```cpp
 //在 C 或 C++ 中，位域提供了一种优化内存使用的方式。它允许在结构体中仅用一定数量的比特位来存储字段，而不是使用整个字节或更多空间来存储一个小值。
@@ -595,13 +533,11 @@ struct Color {
 * 位域的类型必须是整型或枚举类型，带符号类型中的位域的行为将因具体实现而定
 * 取地址运算符（&）不能作用于位域，任何指针都无法指向类的位域
 
-### `extern "C"`
+## `extern "C"`
 
 * 被 `extern "C"` 修饰的变量和函数是按照 C 语言方式编译和链接的
 
 * `extern "C"` 的作用是让 C++ 编译器将 `extern "C"` 声明的代码当作 C 语言代码处理，可以避免 C++ 因符号修饰导致代码不能和C语言库中的符号进行链接的问题。
-
-extern "C" 使用
 
 ```cpp
 #ifdef __cplusplus
@@ -624,7 +560,7 @@ int main() {
 }
 ```
 
-### 宏解释
+## 宏解释
 
 `#`
 
@@ -670,15 +606,15 @@ int main()
 
 int main()
 {
-      int a=10,b=11;
-      LOGV("a=%d--b=%d\r\n",a,b);   //a=10--b=11
-     return 0;
+    int a=10,b=11;
+    LOGV("a=%d--b=%d\r\n",a,b);   //a=10--b=11
+    return 0;
 }
 ```
 
 `##__VA_ARGS__`
 
-### `function`
+## `function`
 
 `std::function` 是 C++11 中的标准库函数对象包装器，它可以用来存储和调用任何可调用对象
 
@@ -718,8 +654,7 @@ int main() {
 }
 ```
 
-
-### `union`
+## `union`
 
 联合（union）是一种节省空间的特殊的类，一个 union 可以有多个数据成员，但是在任意时刻只有一个数据成员可以有值。当某个成员被赋值后其他成员变为未定义状态。联合有如下特点：
 
@@ -731,8 +666,6 @@ int main() {
 * 匿名 union 在定义所在作用域可直接访问 union 成员
 * 匿名 union 不能包含 protected 成员或 private 成员
 * 全局匿名联合必须是静态（static）的
-
-union 使用
 
 ```cpp
 #include<iostream>
@@ -768,12 +701,10 @@ int main() {
 }
 ```
 
-### `explicit`
+## `explicit`
 
 * explicit 修饰构造函数时，可以防止隐式转换和复制初始化
 * explicit 修饰转换函数时，可以防止隐式转换，但 [按语境转换](https://zh.cppreference.com/w/cpp/language/implicit_conversion) 除外
-
-explicit 使用
 
 ```cpp
 struct A
@@ -820,7 +751,7 @@ int main()
 }
 ```
 
-### friend 友元类和友元函数
+## `friend` 友元类和友元函数
 
 * 能访问私有成员  
 * 破坏封装性
@@ -828,112 +759,9 @@ int main()
 * 友元关系的单向性
 * 友元声明的形式及数量不受限制
 
-### using
+## `enum`
 
-#### using 声明
-
-一条 `using 声明` 语句一次只引入命名空间的一个成员。它使得我们可以清楚知道程序中所引用的到底是哪个名字。如：
-
-```cpp
-using namespace_name::name;
-```
-
-#### 构造函数的 using 声明
-
-在 C++11 中，派生类能够重用其直接基类定义的构造函数。
-
-```cpp
-class Derived : Base {
-public:
-    using Base::Base;
-    /* ... */
-};
-```
-
-如上 using 声明，对于基类的每个构造函数，编译器都生成一个与之对应（形参列表完全相同）的派生类构造函数。生成如下类型构造函数：
-
-```cpp
-Derived(parms) : Base(args) { }
-```
-
-#### using 指示
-
-`using 指示` 使得某个特定命名空间中所有名字都可见，这样我们就无需再为它们添加任何前缀限定符了。如：
-
-```cpp
-using namespace_name name;
-```
-
-#### 尽量少使用 `using 指示` 污染命名空间
-
-> 一般说来，使用 using 命令比使用 using 编译命令更安全，这是由于它**只导入了指定的名称**。如果该名称与局部名称发生冲突，编译器将**发出指示**。using编译命令导入所有的名称，包括可能并不需要的名称。如果与局部名称发生冲突，则**局部名称将覆盖名称空间版本**，而编译器**并不会发出警告**。另外，名称空间的开放性意味着名称空间的名称可能分散在多个地方，这使得难以准确知道添加了哪些名称。
-
-using 使用
-
-尽量少使用 `using 指示`
-
-```cpp
-using namespace std;
-```
-
-应该多使用 `using 声明`
-
-```cpp
-int x;
-std::cin >> x ;
-std::cout << x << std::endl;
-```
-
-或者
-
-```cpp
-using std::cin;
-using std::cout;
-using std::endl;
-int x;
-cin >> x;
-cout << x << endl;
-```
-
-### :: 范围解析运算符
-
-#### 分类
-
-1. 全局作用域符（`::name`）：用于类型名称（类、类成员、成员函数、变量等）前，表示作用域为全局命名空间
-2. 类作用域符（`class::name`）：用于表示指定类型的作用域范围是具体某个类的
-3. 命名空间作用域符（`namespace::name`）:用于表示指定类型的作用域范围是具体某个命名空间的
-
-:: 使用
-
-```cpp
-int count = 11;         // 全局（::）的 count
-
-class A {
-public:
-    static int count;   // 类 A 的 count（A::count）
-};
-int A::count = 21;
-
-void fun()
-{
-    int count = 31;     // 初始化局部的 count 为 31
-    count = 32;         // 设置局部的 count 的值为 32
-}
-
-int main() {
-    ::count = 12;       // 测试 1：设置全局的 count 的值为 12
-
-    A::count = 22;      // 测试 2：设置类 A 的 count 为 22
-
-    fun();              // 测试 3
-
-    return 0;
-}
-```
-
-### enum
-
-#### 限定作用域的枚举类型
+### 限定作用域的枚举类型
 
 ```cpp
 enum class open_modes { input, output, append };
@@ -947,22 +775,20 @@ Status status = Status::OK;
 State state = State::On;
 ```
 
-#### 不限定作用域的枚举类型
+### 不限定作用域的枚举类型
 
 ```cpp
 enum color { red, yellow, green };
 enum { floatPrec = 6, doublePrec = 10 };
 ```
 
-### decltype
+## `decltype`
 
 decltype 关键字用于检查实体的声明类型或表达式的类型及值分类。语法：
 
 ```cpp
 decltype ( expression )
 ```
-
-decltype 使用
 
 ```cpp
 // 尾置返回允许我们在参数列表之后声明返回类型
@@ -981,7 +807,7 @@ auto fcn2(It beg, It end) -> typename remove_reference<decltype(*beg)>::type
 }
 ```
 
-### 成员初始化列表
+## 成员初始化列表
 
 好处
 
@@ -994,8 +820,6 @@ auto fcn2(It beg, It end) -> typename remove_reference<decltype(*beg)>::type
 ### initializer_list 列表初始化
 
 用花括号初始化器列表初始化一个对象，其中对应构造函数接受一个 `std::initializer_list` 参数.
-
-initializer_list 使用
 
 ```cpp
 #include <iostream>
@@ -1048,14 +872,14 @@ int main()
 }
 ```
 
-### struct 和 class
+## struct 和 class
 
 1. struct 更适合看成是一个数据结构的实现体，class 更适合看成是一个对象的实现体。
 2. struct的默认访问控制权限是public，而class的默认访问控制权限是private的
 3. 在继承关系中，struct默认共有继承，class默认私有继承
 4. class关键字可以用来定义模版参数
 
-#### c++和c中结构体的比较
+### c++和c中结构体的比较
 
 | |c|c++|
 --|--|--
@@ -1065,7 +889,7 @@ int main()
 |继承关系|不可以继承|可以从类或者其他结构体继承
 |初始化|不能直接初始化数据成员|可以
 
-### C++从代码到可执行二进制文件的过程
+## C++从代码到可执行二进制文件的过程
 
 >分为四个步骤：预编译、编译、汇编、链接 (装载、运行)
 
@@ -1085,13 +909,13 @@ int main()
    1. 将汇编代码转变为可执行的机器指令
 4. 链接：将不同的源文件产生的目标文件进行链接，形成可执行程序
 
-#### 静态链接与动态链接
+### 静态链接与动态链接
 
 * 静态链接，是在链接的时候就已经把要调用的函数或者过程链接到了生成的可执行文件中，就算你在去把静态库删除也不会影响可执行程序的执行；生成的静态链接库，Linux下以.a为后缀。
 
 * 动态链接，是在链接的时候没有把调用的函数代码链接进去，而是在执行的过程中，再去找要链接的函数，生成的可执行文件中没有函数代码，只包含函数的重定位信息，所以当你删除动态库时，可执行程序就不能运行。生成的动态链接库，Linux下以.so为后缀。
 
-### 程序分区
+## 程序分区
 
 >堆区、栈区、bss、text、data
 
@@ -1117,9 +941,18 @@ cout << ( str7 == str8 ) << endl;
 //存储在静态区
 ```
 
-![存储区](/images/%E5%AD%98%E5%82%A8%E5%8C%BA.png)
+|类型|作用域|生命周期|存储位置|
+|--|--|--|--|
+auto|{  }|当前函数|栈
+static局部|{  }|整个程序|初始化在data，未初始化在BSS
+static全局|当前文件|整个程序|初始化在data，未初始化在BSS
+static函数|当前文件|整个程序|代码区
+extern变量|当前文件|整个程序|初始化在data，未初始化在BSS
+extern函数|当前文件|整个程序|代码区
+register|{  }|当前函数|运行时存储在寄存器
+字符串常量|当前文件|整个程序|data
 
-### 面向对象
+## 面向对象
 
 面向对象程序设计（Object-oriented programming，OOP）是种具有对象概念的程序编程典范，同时也是一种程序开发的抽象方针。
 
@@ -1127,7 +960,7 @@ cout << ( str7 == str8 ) << endl;
 
 面向对象三大特征 —— 封装、继承、多态
 
-#### 封装
+### 封装
 
 把客观事物封装成抽象的类，并且类可以把自己的数据和方法只让可信的类或者对象操作，对不可信的进行信息隐藏。关键字：public, protected, private。不写默认为 private。
 
@@ -1135,11 +968,11 @@ cout << ( str7 == str8 ) << endl;
 * `protected` 成员：只允许被子类及本类的成员函数访问
 * `private` 成员：只允许被本类的成员函数、友元类或友元函数访问
 
-#### 继承
+### 继承
 
 * 基类（父类）——&gt; 派生类（子类）
 
-#### 多态
+### 多态
 
 * 多态，即多种状态（形态）。简单来说，我们可以将多态定义为消息以多种形式显示的能力。
 * 多态是以封装和继承为基础的。
@@ -1150,16 +983,6 @@ cout << ( str7 == str8 ) << endl;
     4. 强制多态（Coercion Polymorphism，编译期/运行期）：基本类型转换、自定义类型转换
 
 > [The Four Polymorphisms in C++](https://catonmat.net/cpp-polymorphism)
-
-#### C 实现 C++ 类
-
-C 实现 C++ 的面向对象特性（封装、继承、多态）
-
-* 封装：使用函数指针把属性与方法封装到结构体中
-* 继承：结构体嵌套
-* 多态：父类与子类方法的函数指针不同
-
-> [C语言实现面向对象](https://stackoverflow.com/a/351745)
 
 #### 静态多态（编译期/早绑定）
 
@@ -1176,7 +999,7 @@ public:
 
 操作符重载
 
-* 类型强转运算符 `operator target_type() const;`
+> 类型强转运算符 `operator target_type() const;`
 
 ```c++
 #include <iostream>
@@ -1217,13 +1040,21 @@ int main() {
 * 构造函数不能是虚函数（因为在调用构造函数时，虚表指针并没有在对象的内存空间中，必须要构造函数调用完成后才会形成虚表指针）
 * 内联函数不能是表现多态性时的虚函数，解释见：[虚函数（virtual）可以是内联函数（inline）吗？](https://github.com/huihut/interview#%E8%99%9A%E5%87%BD%E6%95%B0virtual%E5%8F%AF%E4%BB%A5%E6%98%AF%E5%86%85%E8%81%94%E5%87%BD%E6%95%B0inline%E5%90%97)
 
-#### 虚析构函数
+### C 实现 C++ 类
+
+C 实现 C++ 的面向对象特性（封装、继承、多态）
+
+* 封装：使用函数指针把属性与方法封装到结构体中
+* 继承：结构体嵌套
+* 多态：父类与子类方法的函数指针不同
+
+> [C语言实现面向对象](https://zhuanlan.zhihu.com/p/566782733)
+
+### 虚析构函数
 
 虚析构函数是一个在基类中声明为虚函数的析构函数。它的作用是当使用基类的指针删除派生类的对象时，能够正确地调用派生类的析构函数，防止内存泄漏或者资源没有被正确释放的问题。
 
 通常情况下，如果没有定义虚析构函数，在使用基类指针删除派生类对象时，只会调用基类的析构函数，而不会调用派生类的析构函数，导致派生类的资源没有被释放。这就是虚析构函数存在的意义。
-
-虚析构函数使用
 
 ```cpp
 class Shape
@@ -1249,7 +1080,7 @@ int main()
 }
 ```
 
-#### 纯虚函数
+### 纯虚函数
 
 纯虚函数是一种特殊的虚函数，在基类中不能对虚函数给出有意义的实现，而把它声明为纯虚函数，它的实现留给该基类的派生类去做。
 
@@ -1274,7 +1105,7 @@ virtual int A() = 0;
 
 > [C++中的虚函数(表)实现机制以及用C语言对其进行的模拟实现](https://blog.twofei.com/496/)
 
-#### 虚继承
+### 虚继承
 
 虚继承用于解决多继承条件下的菱形继承问题（浪费存储空间、存在二义性）。
 
@@ -1308,9 +1139,9 @@ virtual int A() = 0;
   * 没有类内初始化
   * 没有基类，也没有 virtual 函数
 
-### 内存分配和管理
+## 内存分配和管理
 
-#### malloc、calloc、realloc、alloca
+### malloc、calloc、realloc、alloca
 
 * malloc：申请指定字节数的内存。申请到的内存中的初始值不确定。
 * calloc：为指定长度的对象，分配能容纳其指定个数的内存。申请到的内存的每一位都初始化为 0。
@@ -1327,7 +1158,7 @@ virtual int A() = 0;
 
 * alloca：在栈上申请内存。程序在出栈的时候，会自动释放内存。但是需要注意的是，alloca 不具可移植性, 而且在没有传统堆栈的机器上很难实现。alloca 不宜使用在必须广泛移植的程序中。C99 中支持变长数组 (VLA)，可以用来替代 alloca。
 
-#### malloc、free
+### malloc、free
 
 用于分配、释放内存
 
@@ -1347,7 +1178,7 @@ free(p);
 p = nullptr;
 ```
 
-#### new、delete
+### new、delete
 
 1. new / new[]：完成两件事，先底层调用 malloc 分配了内存，然后调用构造函数（创建对象）。
 2. delete/delete[]：也完成两件事，先调用析构函数（清理资源），然后底层调用 free 释放空间。
@@ -1366,7 +1197,7 @@ int main()
 }
 ```
 
-#### placement new
+### placement new
 
 `placement new`允许我们向 new 传递额外的地址参数，从而在预先指定的内存区域创建对象。
 
@@ -1380,7 +1211,7 @@ new (place_address) type [size] { braced initializer list }
 * `place_address` 是个指针
 * `initializers` 提供一个（可能为空的）以逗号分隔的初始值列表
 
-#### new & mallo的区别
+### new & mallo的区别
 
 1. new是操作符，而malloc是函数。
 2. new在调用的时候先分配内存，在调用构造函数，释放的时候调用析构函数；而malloc没有构造函数和析构函数。
@@ -1389,11 +1220,11 @@ new (place_address) type [size] { braced initializer list }
 5. new分配内存更直接和安全。
 6. new发生错误抛出异常，malloc返回null
 
-#### malloc底层实现
+### malloc底层实现
 
-#### new底层实现
+### new底层实现
 
-#### 内存泄漏
+### 内存泄漏
 
 > 简单来说就是申请了一块内存空间，使用完毕后没有释放掉
 
@@ -1427,19 +1258,15 @@ new (place_address) type [size] { braced initializer list }
 
 原因：在堆上生成对象，使用 new 关键词操作，其过程分为两阶段：第一阶段，使用 new 在堆上寻找可用内存，分配给对象；第二阶段，调用构造函数生成对象。将 new 操作设置为私有，那么第一阶段就无法完成，就不能够在堆上生成对象。
 
-### 智能指针
+## 智能指针
 
-#### C++ 标准库（STL）中
-
-头文件：`#include <memory>`
-
-#### C++ 98
+### C++ 98
 
 ```cpp
 std::auto_ptr<std::string> ps (new std::string(str))；
 ```
 
-#### C++ 11
+### C++ 11
 
 * shared_ptr
   
@@ -1455,11 +1282,11 @@ std::auto_ptr<std::string> ps (new std::string(str))；
 
   * 可打破环状引用（cycles of references，两个其实已经没有被使用的对象彼此互指，使之看似还在 “被使用” 的状态）的问题
 
-### 强制类型转换运算符
+## 强制类型转换运算符
 
 > [MSDN . 强制转换运算符](https://msdn.microsoft.com/zh-CN/library/5f6c9f8h.aspx)
 
-#### static_cast
+### static_cast
 
 * 用于非多态类型的转换
 * 不执行运行时类型检查（转换安全性不如 dynamic_cast）
@@ -1482,7 +1309,7 @@ char* pch = static_cast<char*>(static_cast<void*>(&arr[0]));
 
 > 向上转换是一种隐式转换。
 
-#### dynamic_cast
+### dynamic_cast
 
 * 用于多态类型的转换
 * 执行行运行时类型检查
@@ -1526,7 +1353,7 @@ Shape* sptr = new Circle;
 int* iptr = dynamic_cast<int*>(sptr); // 返回空指针
 ```
 
-#### const_cast
+### const_cast
 
 * 用于删除 const、volatile 和 __unaligned 特性（如将 const int 类型转换为 int 类型 ）
 
@@ -1544,7 +1371,7 @@ char* ch = const_cast<char*>(pstr);
 cout << str << endl; // 输出 "hello world!"
 ```
 
-#### reinterpret_cast
+### reinterpret_cast
 
 * 用于位的简单重新解释
 * 滥用 reinterpret_cast 运算符可能很容易带来风险。 除非所需转换本身是低级别的，否则应使用其他强制转换运算符之一。
@@ -1553,7 +1380,7 @@ cout << str << endl; // 输出 "hello world!"
 * reinterpret_cast 运算符不能丢掉 const、volatile 或 __unaligned 特性。
 * reinterpret_cast 的一个实际用途是在哈希函数中，即，通过让两个不同的值几乎不以相同的索引结尾的方式将值映射到索引。
 
-#### bad_cast
+### bad_cast
 
 * 由于强制转换为引用类型失败，dynamic_cast 运算符引发 bad_cast 异常。
 
@@ -1566,16 +1393,16 @@ catch (bad_cast b) {
 } 
 ```
 
-### 运行时类型信息 (RTTI)
+## 运行时类型信息 (RTTI)
 
-#### typeid
+### typeid
 
 * typeid 运算符允许在运行时确定对象的类型
 * typeid 返回一个 typeinfo 对象的引用
 * 如果想通过基类的指针获得派生类的数据类型，基类必须带有虚函数
 * 只能获取对象的实际类型
 
-#### type_info
+### type_info
 
 * type_info 类描述编译器在程序中生成的类型信息。 此类的对象可以有效存储指向类型的名称的指针。 type_info 类还可存储适合比较两个类型是否相等或比较其排列顺序的编码值。 类型的编码规则和排列顺序是未指定的，并且可能因程序而异。
 * 头文件：`typeinfo`
@@ -1644,7 +1471,7 @@ int main(){
 }
 ```
 
-### 模版元编程
+## 模版元编程
 
 >模板元编程的基本思想是利用模板进行静态计算和泛型编程：在编译器读取和翻译源代码时，所有涉及模板的计算都会被展开，并生成对应的字节码，而这些计算的结果可以直接嵌入最终的可执行程序中。
 
@@ -1714,20 +1541,28 @@ template<bool B, typename T = void>
 using enable_if_t = typename enable_if<B, T>::type;
 ```
 
-#### SFINAE技术
+### SFINAE技术
 
 SFINAE 是指 `Substitutio Failure Is Not An Error`，即 “ 替换失败不是一个错误 ” 的缩写。它是 C++ 模板编程中一个非常强大的特性，针对模板参数匹配过程中因类型不匹配、函数不存在等导致的错误，使用 SFINAE 技术可以让编译器跳过这些错误，并继续寻找符合条件的模板。
 
-### Google C++ Style Guide
+## Google C++ Style Guide
 
 * 英文：[Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html)
 * 中文：[C++ 风格指南](https://zh-google-styleguide.readthedocs.io/en/latest/google-cpp-styleguide/contents/)
 
 <a id="os"></a>
 
-## 💻 操作系统
+# 💻 操作系统
 
-### 进程与线程
+[xv6中文文档](https://github.com/FrankZn/xv6-riscv-book-Chinese)
+
+[xv6实验详解](https://blog.miigon.net/posts/s081-ending/#lab-%E6%8C%87%E5%BC%95)
+
+[xv6课程翻译](https://mit-public-courses-cn-translatio.gitbook.io/mit6-s081/)
+
+[Linux -0.12内核剖析](https://github.com/yifengyou/linux-0.12)
+
+## 进程与线程
 
 对于有线程系统：
 
@@ -1738,9 +1573,9 @@ SFINAE 是指 `Substitutio Failure Is Not An Error`，即 “ 替换失败不是
 
 * 进程是资源调度、分配的独立单位
 
-#### 进程调度算法
+### 进程调度
 
-#### 进程之间的通信方式以及优缺点
+### 进程通信
 
 * 管道（PIPE）
   * 有名管道：一种半双工的通信方式，它允许无亲缘关系进程间的通信
@@ -1779,7 +1614,7 @@ SFINAE 是指 `Substitutio Failure Is Not An Error`，即 “ 替换失败不是
       4. 可以加密,数据安全性强
   * 缺点：需对传输的数据进行解析，转化成应用级的数据。
 
-#### 线程之间的通信方式
+### 线程通信
 
 * 锁机制：
   * 互斥锁/量（mutex）：提供了以排他方式防止数据结构被并发修改的方法。
@@ -1796,19 +1631,19 @@ SFINAE 是指 `Substitutio Failure Is Not An Error`，即 “ 替换失败不是
 
 > 进程之间的通信方式以及优缺点来源于：[进程线程面试题总结](http://blog.csdn.net/wujiafei_njgcxy/article/details/77098977)
 
-#### 进程之间私有和共享的资源
+### 进程之间私有和共享的资源
 
 * 私有：地址空间、堆、全局变量、栈、寄存器
 * 共享：代码段，公共数据，进程目录，进程 ID
 
-#### 线程之间私有和共享的资源
+### 线程之间私有和共享的资源
 
 * 私有：线程栈，寄存器，程序计数器
 * 共享：堆，地址空间，全局变量，静态变量
 
-#### 多进程与多线程间的对比、优劣与选择
+### 多进程与多线程间的对比、优劣与选择
 
-##### 对比
+#### 对比
 
 对比维度 | 多进程 | 多线程
 ---|---|---
@@ -1819,14 +1654,14 @@ SFINAE 是指 `Substitutio Failure Is Not An Error`，即 “ 替换失败不是
 可靠性|进程间不会互相影响|一个线程挂掉将导致整个进程挂掉|
 分布式|适应于多核、多机分布式；如果一台机器不够，扩展到多台机器比较简单|适应于多核分布式|
 
-##### 优劣
+#### 优劣
 
 优劣|多进程|多线程
 ---|---|---
 优点|编程、调试简单，可靠性较高|创建、销毁、切换速度快，内存、资源占用小
 缺点|创建、销毁、切换速度慢，内存、资源占用大|编程、调试复杂，可靠性较差
 
-##### 选择
+#### 选择
 
 * 需要频繁创建销毁的优先用线程
 * 需要进行大量计算的优先使用线程
@@ -1836,13 +1671,13 @@ SFINAE 是指 `Substitutio Failure Is Not An Error`，即 “ 替换失败不是
 
 > 多进程与多线程间的对比、优劣与选择来自：[多线程还是多进程的选择及区别](https://blog.csdn.net/lishenglong666/article/details/8557215)
 
-### Linux 内核的同步方式
+## Linux 内核的同步方式
 
-#### 原因
+### 原因
 
 在现代操作系统里，同一时间可能有多个内核执行流在执行，因此内核其实像多进程多线程编程一样也需要一些同步机制来同步各执行单元对共享数据的访问。尤其是在多处理器系统上，更需要一些同步机制来同步不同处理器上的执行单元对共享的数据的访问。
 
-#### 同步方式
+### 同步方式
 
 * 原子操作
 * 信号量（semaphore）
@@ -1856,22 +1691,22 @@ SFINAE 是指 `Substitutio Failure Is Not An Error`，即 “ 替换失败不是
 
 > 来自：[Linux 内核的同步机制，第 1 部分](https://www.ibm.com/developerworks/cn/linux/l-synch/part1/)、[Linux 内核的同步机制，第 2 部分](https://www.ibm.com/developerworks/cn/linux/l-synch/part2/)
 
-### 死锁
+## 死锁
 
-#### 死锁原因
+### 死锁原因
 
 * 系统资源不足
 * 资源分配不当
 * 进程运行推进顺序不合适
 
-#### 产生条件
+### 产生条件
 
 * 互斥
 * 请求和保持
 * 不剥夺
 * 环路
 
-#### 预防
+### 预防
 
 * 打破互斥条件：改造独占性资源为虚拟资源，大部分资源已无法改造。
 * 打破不可抢占条件：当一进程占有一独占性资源后又申请一独占性资源而无法满足，则退出原占有的资源。
@@ -1880,58 +1715,23 @@ SFINAE 是指 `Substitutio Failure Is Not An Error`，即 “ 替换失败不是
 * 有序资源分配法
 * 银行家算法
 
-### 文件系统
+## 文件系统
 
 * Windows：FCB 表 + FAT + 位图
 * Unix：inode + 混合索引 + 成组链接
 
-### 主机字节序与网络字节序
-
-#### 主机字节序（CPU 字节序）
-
-可以这样判断自己 CPU 字节序是大端还是小端：
-
-```cpp
-#include <iostream>
-using namespace std;
-
-int main()
-{
-    int i = 0x12345678;
-
-    if (*((char*)&i) == 0x12)
-        cout << "大端" << endl;
-    else
-        cout << "小端" << endl;
-
-    return 0;
-}
-```
-
-#### 各架构处理器的字节序
-
-* x86（Intel、AMD）、MOS Technology 6502、Z80、VAX、PDP-11 等处理器为小端序；
-* Motorola 6800、Motorola 68000、PowerPC 970、System/370、SPARC（除 V9 外）等处理器为大端序；
-* ARM（默认小端序）、PowerPC（除 PowerPC 970 外）、DEC Alpha、SPARC V9、MIPS、PA-RISC 及 IA64 的字节序是可配置的。
-
-#### 网络字节序
-
-网络字节顺序是 TCP/IP 中规定好的一种数据表示格式，它与具体的 CPU 类型、操作系统等无关，从而可以保证数据在不同主机之间传输时能够被正确解释。
-
-网络字节顺序采用：大端（Big Endian）排列方式。
-
-### 内存管理
+## 内存管理
 
 ### 页面置换算法
 
 在地址映射过程中，若在页面中发现所要访问的页面不在内存中，则产生缺页中断。当发生缺页中断时，如果操作系统内存中没有空闲页面，则操作系统必须在内存选择一个页面将其移出内存，以便为即将调入的页面让出空间。而用来选择淘汰哪一页的规则叫做页面置换算法。
 
-#### 置换分类
+### 置换分类
 
 * 全局置换：在整个内存空间置换
 * 局部置换：在本进程中进行置换
 
-#### 算法
+### 算法
 
 全局：
 
@@ -1948,7 +1748,7 @@ int main()
 
 <a id="computer-network"></a>
 
-## ☁️ 计算机网络
+# ☁️ 计算机网络
 
 > 本节部分知识点来自《计算机网络（第 7 版）》
 
@@ -1956,7 +1756,7 @@ int main()
 
 ![计算机网络体系结构](https://gitee.com/huihut/interview/raw/master/images/计算机网络体系结构.png)
 
-### 各层作用及协议
+## 各层作用及协议
 
 分层 | 作用 | 协议
 ---|---|---
@@ -2523,10 +2323,6 @@ TRACE | 回显服务器收到的请求，主要用于测试或诊断
 <a id="data-structure"></a>
 
 ## 〽️ 数据结构
-
-### `hash`
-
-### `heap`
 
 <a id="algorithm"></a>
 
@@ -3170,16 +2966,7 @@ int main( void )
 
 #### [线程安全的日志系统](/project/log.cpp)
 
-<a id="review-of-brush-questions-website"></a>
-
-## 💯 复习刷题网站
-
-* [cplusplus](http://www.cplusplus.com/)
-* [cppreference](https://zh.cppreference.com/w/%E9%A6%96%E9%A1%B5)
-* [runoob](http://www.runoob.com/cplusplus/cpp-tutorial.html)
-* [leetcode](https://leetcode.com/) | [leetcode-cn](https://leetcode-cn.com/)
-* [lintcode](https://www.lintcode.com/)
-* [nowcoder](https://www.nowcoder.net/)
+### XV6 操作系统
 
 <a id="interview-questions-experience"></a>
 
