@@ -1126,7 +1126,7 @@ shmctl(int shm_id, int command, struct shmid_ds *buf);
 ### 消息队列
 
 ```c++
-int msgget(key_t, key, int msgflg);
+int msgget(key_t key, int msgflg);
 int msgsnd(int msqid, const void *msg_ptr, size_t msg_sz, int msgflg);
 
 msqid   msgget返回的消息队列标识符

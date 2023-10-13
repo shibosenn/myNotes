@@ -1,10 +1,30 @@
-//样可变参
-#include <stdio.h>
-#define LOGV(...)       printf(__VA_ARGS__);
+#include <iostream>
 
-int main()
-{
-      int a=10,b=11;
-      LOGV("a=%d--b=%d\r\n",a,b);   //a=10--b=11
-     return 0;
+using namespace std;
+
+class myFunction{
+public:
+      int operator() (int x, int y) {
+            return x + y;
+      }
+
+      int  operator *() {
+            return *data;
+      }
+
+
+
+      void set(int x) {
+            *data = x;
+      }
+private:
+      int *data;
+};
+
+int main() {
+      myFunction f;
+      cout << "result = "<<f(1,2)<<endl;
+
+      f.set(512);
+      cout << "data = "<< *f <<endl;
 }

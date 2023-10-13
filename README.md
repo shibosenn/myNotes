@@ -500,7 +500,7 @@ struct test
     int m3;
 };
 
-#pragma pack(pop)  `// 恢复对齐状态
+#pragma pack(pop)   // 恢复对齐状态
 ```
 
 ## 位域
@@ -865,8 +865,7 @@ int main()
  
     std::cout << "The list bound to auto has size() = " << al.size() << '\n';
  
-//    templated_fn({1, 2, 3}); // 编译错误！“ {1, 2, 3} ”不是表达式，
-                             // 它无类型，故 T 无法推导
+
     templated_fn<std::initializer_list<int>>({1, 2, 3}); // OK
     templated_fn<std::vector<int>>({1, 2, 3});           // 也 OK
 }
